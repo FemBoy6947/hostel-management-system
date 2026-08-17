@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing & logs
+coverage
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Executables
+cloudflared.exe
+*.exe
+
+# Database
+server/prisma/*.db
+server/prisma/*.db-journal
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -1,0 +1,26 @@
+{
+  "name": "hostel-management-system",
+  "version": "1.0.0",
+  "description": "Enterprise Full-Stack Hostel Management System (HMS) ERP",
+  "scripts": {
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "seed": "cd server && npm run prisma:seed",
+    "build:server": "cd server && npm run build",
+    "build:client": "cd client && npm run build",
+    "build": "npm run build:server && npm run build:client"
+  },
+  "keywords": [
+    "hostel-management-system",
+    "erp",
+    "react",
+    "nodejs",
+    "express",
+    "prisma",
+    "postgresql",
+    "jwt",
+    "rbac"
+  ],
+  "author": "IT Final Year Engineering Project Team",
+  "license": "MIT"
+}
