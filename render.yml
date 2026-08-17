@@ -19,11 +19,9 @@ services:
       - key: CORS_ORIGIN
         value: "*"
 
-  # Frontend Static Site
-  - type: web
+  # Frontend Static Site (type: static is free by default on Render)
+  - type: static
     name: hms-frontend
-    runtime: static
-    plan: free
     rootDir: client
     buildCommand: npm install && npm run build
     staticPublishPath: dist
