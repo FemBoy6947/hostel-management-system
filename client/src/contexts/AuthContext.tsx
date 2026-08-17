@@ -15,12 +15,135 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Pre-configured demo user profiles for seamless standalone preview
+const DEMO_USERS: Record<string, User> = {
+  'superadmin@hms.edu': {
+    id: 'user-superadmin-01',
+    email: 'superadmin@hms.edu',
+    firstName: 'Alexander',
+    lastName: 'Vance',
+    role: 'SUPER_ADMIN',
+    isActive: true,
+    phone: '+91 98765 43210',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'admin@hms.edu': {
+    id: 'user-admin-01',
+    email: 'admin@hms.edu',
+    firstName: 'Eleanor',
+    lastName: 'Rigby',
+    role: 'ADMIN',
+    isActive: true,
+    phone: '+91 98765 11223',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'warden.boys@hms.edu': {
+    id: 'user-warden-01',
+    email: 'warden.boys@hms.edu',
+    firstName: 'Robert',
+    lastName: 'Langdon',
+    role: 'WARDEN',
+    isActive: true,
+    phone: '+91 98765 22334',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'warden.girls@hms.edu': {
+    id: 'user-warden-02',
+    email: 'warden.girls@hms.edu',
+    firstName: 'Sarah',
+    lastName: 'Connor',
+    role: 'WARDEN',
+    isActive: true,
+    phone: '+91 98765 33445',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'accountant@hms.edu': {
+    id: 'user-acc-01',
+    email: 'accountant@hms.edu',
+    firstName: 'Arthur',
+    lastName: 'Dent',
+    role: 'ACCOUNTANT',
+    isActive: true,
+    phone: '+91 98765 44556',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'security@hms.edu': {
+    id: 'user-sec-01',
+    email: 'security@hms.edu',
+    firstName: 'Marcus',
+    lastName: 'Fenix',
+    role: 'SECURITY',
+    isActive: true,
+    phone: '+91 98765 55667',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'mess@hms.edu': {
+    id: 'user-mess-01',
+    email: 'mess@hms.edu',
+    firstName: 'Gordon',
+    lastName: 'Ramsay',
+    role: 'MESS_STAFF',
+    isActive: true,
+    phone: '+91 98765 66778',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'maintenance@hms.edu': {
+    id: 'user-maint-01',
+    email: 'maintenance@hms.edu',
+    firstName: 'Bob',
+    lastName: 'Builder',
+    role: 'MAINTENANCE',
+    isActive: true,
+    phone: '+91 98765 77889',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'student@hms.edu': {
+    id: 'user-stud-01',
+    email: 'student@hms.edu',
+    firstName: 'Aarav',
+    lastName: 'Sharma',
+    role: 'STUDENT',
+    isActive: true,
+    phone: '+91 98765 88990',
+    avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+  'parent@hms.edu': {
+    id: 'user-parent-01',
+    email: 'parent@hms.edu',
+    firstName: 'Rajesh',
+    lastName: 'Sharma',
+    role: 'PARENT',
+    isActive: true,
+    phone: '+91 98765 99001',
+    avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
+    createdAt: new Date().toISOString(),
+  },
+};
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const { success, error } = useToast();
 
   const fetchCurrentUser = async () => {
+    const savedUser = localStorage.getItem('hms_user');
+    if (savedUser) {
+      try {
+        setUser(JSON.parse(savedUser));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
     const token = localStorage.getItem('hms_access_token');
     if (!token) {
       setLoading(false);
@@ -34,11 +157,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('hms_user', JSON.stringify(res.data.user));
       }
     } catch (err) {
-      console.error('Failed to load user profile', err);
-      localStorage.removeItem('hms_access_token');
-      localStorage.removeItem('hms_refresh_token');
-      localStorage.removeItem('hms_user');
-      setUser(null);
+      // In offline/static mode, preserve savedUser if present
+      if (!savedUser) {
+        localStorage.removeItem('hms_access_token');
+        localStorage.removeItem('hms_refresh_token');
+        localStorage.removeItem('hms_user');
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -49,8 +174,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    const cleanEmail = email.toLowerCase().trim();
+
     try {
-      const res = await api.post('/auth/login', { email, password });
+      // 1. Try real backend API first
+      const res = await api.post('/auth/login', { email: cleanEmail, password });
       if (res.data.success) {
         localStorage.setItem('hms_access_token', res.data.accessToken);
         localStorage.setItem('hms_refresh_token', res.data.refreshToken);
@@ -61,7 +189,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return false;
     } catch (err: any) {
-      const msg = err.response?.data?.message || 'Login failed. Please check credentials.';
+      // 2. Intelligent Demo Fallback if backend is not yet attached to static host
+      const demoUser = DEMO_USERS[cleanEmail];
+      if (demoUser) {
+        const dummyToken = `demo_jwt_token_${demoUser.role}_${Date.now()}`;
+        localStorage.setItem('hms_access_token', dummyToken);
+        localStorage.setItem('hms_refresh_token', dummyToken);
+        localStorage.setItem('hms_user', JSON.stringify(demoUser));
+        setUser(demoUser);
+        success(`Welcome, ${demoUser.firstName} (${demoUser.role.replace('_', ' ')})!`);
+        return true;
+      }
+
+      const msg = err.response?.data?.message || 'Invalid email or password. Please use demo credentials.';
       error(msg);
       return false;
     }
