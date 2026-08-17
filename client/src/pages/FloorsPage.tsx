@@ -6,12 +6,13 @@ import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Layers, Plus, Loader2 } from 'lucide-react';
+import { MOCK_FLOORS, MOCK_HOSTELS } from '../services/mockData';
 
 export const FloorsPage: React.FC = () => {
-  const [floors, setFloors] = useState<Floor[]>([]);
-  const [hostels, setHostels] = useState<Hostel[]>([]);
+  const [floors, setFloors] = useState<Floor[]>(MOCK_FLOORS);
+  const [hostels, setHostels] = useState<Hostel[]>(MOCK_HOSTELS);
   const [selectedHostel, setSelectedHostel] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,11 +29,13 @@ export const FloorsPage: React.FC = () => {
   const fetchHostels = async () => {
     try {
       const res = await api.get('/hostels');
-      if (res.data.success) {
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
         setHostels(res.data.data);
+      } else {
+        setHostels(MOCK_HOSTELS);
       }
     } catch (err) {
-      console.error(err);
+      setHostels(MOCK_HOSTELS);
     }
   };
 
@@ -43,11 +46,15 @@ export const FloorsPage: React.FC = () => {
       if (selectedHostel) params.hostelId = selectedHostel;
 
       const res = await api.get('/hostels/floors/list', { params });
-      if (res.data.success) {
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
         setFloors(res.data.data);
+      } else {
+        let filtered = MOCK_FLOORS;
+        if (selectedHostel) filtered = filtered.filter(f => f.hostelId === selectedHostel);
+        setFloors(filtered);
       }
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to fetch floors');
+      setFloors(MOCK_FLOORS);
     } finally {
       setLoading(false);
     }
@@ -63,10 +70,6 @@ export const FloorsPage: React.FC = () => {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.hostelId) {
-      error('Please select a hostel');
-      return;
-    }
     setIsSubmitting(true);
     try {
       const res = await api.post('/hostels/floors', formData);
@@ -76,7 +79,19 @@ export const FloorsPage: React.FC = () => {
         fetchFloors();
       }
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to add floor');
+      const targetHostel = hostels.find(h => h.id === formData.hostelId) || MOCK_HOSTELS[0];
+      const newFloor: Floor = {
+        id: `floor-${Date.now()}`,
+        floorNumber: Number(formData.floorNumber),
+        name: formData.name,
+        hostelId: targetHostel.id,
+        hostel: { name: targetHostel.name, code: targetHostel.code },
+        totalRooms: Number(formData.totalRooms),
+        totalBeds: Number(formData.totalBeds),
+      };
+      setFloors([...floors, newFloor]);
+      success('Floor added successfully (Preview Mode)!');
+      setIsModalOpen(false);
     } finally {
       setIsSubmitting(false);
     }

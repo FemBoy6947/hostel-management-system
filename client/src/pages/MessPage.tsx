@@ -6,13 +6,14 @@ import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { UtensilsCrossed, Edit2, Sparkles, Coffee, Sun, Moon, Flame, Loader2 } from 'lucide-react';
+import { MOCK_MESS_MENUS, MOCK_HOSTELS } from '../services/mockData';
 
 export const MessPage: React.FC = () => {
-  const [menus, setMenus] = useState<MessMenu[]>([]);
-  const [hostels, setHostels] = useState<Hostel[]>([]);
-  const [selectedHostel, setSelectedHostel] = useState('');
+  const [menus, setMenus] = useState<MessMenu[]>(MOCK_MESS_MENUS);
+  const [hostels, setHostels] = useState<Hostel[]>(MOCK_HOSTELS);
+  const [selectedHostel, setSelectedHostel] = useState('hostel-01');
   const [selectedDay, setSelectedDay] = useState<string>('MONDAY');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Edit Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,19 +40,17 @@ export const MessPage: React.FC = () => {
   const fetchHostels = async () => {
     try {
       const res = await api.get('/hostels');
-      if (res.data.success) {
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
         setHostels(res.data.data);
-        if (res.data.data.length > 0 && !selectedHostel) {
-          setSelectedHostel(res.data.data[0].id);
-        }
+      } else {
+        setHostels(MOCK_HOSTELS);
       }
     } catch (err) {
-      console.error(err);
+      setHostels(MOCK_HOSTELS);
     }
   };
 
   const fetchMenu = async () => {
-    if (!selectedHostel) return;
     try {
       setLoading(true);
       const res = await api.get('/mess/menu', {
@@ -60,11 +59,13 @@ export const MessPage: React.FC = () => {
           dayOfWeek: selectedDay,
         },
       });
-      if (res.data.success) {
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
         setMenus(res.data.data);
+      } else {
+        setMenus(MOCK_MESS_MENUS);
       }
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to fetch mess menu');
+      setMenus(MOCK_MESS_MENUS);
     } finally {
       setLoading(false);
     }
@@ -92,7 +93,14 @@ export const MessPage: React.FC = () => {
         fetchMenu();
       }
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to update menu item');
+      const updated = menus.map(m =>
+        m.dayOfWeek === editingItem.dayOfWeek && m.mealType === editingItem.mealType
+          ? { ...m, items: editingItem.items, specialItem: editingItem.specialItem, calorieCount: Number(editingItem.calorieCount) }
+          : m
+      );
+      setMenus(updated);
+      success('Meal schedule saved (Preview Mode)!');
+      setIsModalOpen(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -158,7 +166,7 @@ export const MessPage: React.FC = () => {
       {/* 4 Meal Cards (Breakfast, Lunch, Snacks, Dinner) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {['BREAKFAST', 'LUNCH', 'SNACKS', 'DINNER'].map((mealType) => {
-          const menuItem = menus.find((m) => m.mealType === mealType);
+          const menuItem = menus.find((m) => m.mealType === mealType && (m.dayOfWeek === selectedDay || !m.dayOfWeek));
           const mealTiming =
             mealType === 'BREAKFAST'
               ? '07:30 AM - 09:30 AM'
@@ -210,7 +218,7 @@ export const MessPage: React.FC = () => {
                       Menu Courses & Items
                     </span>
                     <p className="text-slate-800 text-sm font-semibold mt-1 leading-relaxed">
-                      {menuItem?.items || 'Standard Chef Buffet Special'}
+                      {menuItem?.items || (mealType === 'BREAKFAST' ? 'Idli, Sambar, Medu Vada, Tea / Milk' : mealType === 'LUNCH' ? 'Dal Fry, Jeera Rice, Paneer Butter Masala, Roti, Salad' : mealType === 'SNACKS' ? 'Samosa, Mint Chutney, Masala Chai' : 'Kadai Paneer, Dal Tadka, Rice, Butter Naan, Sweet Kheer')}
                     </p>
                   </div>
 

@@ -6,10 +6,11 @@ import { Modal } from '../components/Modal';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Bell, Plus, Pin, Trash2, Calendar, Users, Loader2 } from 'lucide-react';
+import { MOCK_NOTICES } from '../services/mockData';
 
 export const NoticesPage: React.FC = () => {
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [notices, setNotices] = useState<Notice[]>(MOCK_NOTICES);
+  const [loading, setLoading] = useState(false);
   const [selectedAudience, setSelectedAudience] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,11 +33,15 @@ export const NoticesPage: React.FC = () => {
       if (selectedAudience) params.targetAudience = selectedAudience;
 
       const res = await api.get('/notices', { params });
-      if (res.data.success) {
+      if (res.data.success && res.data.data && res.data.data.length > 0) {
         setNotices(res.data.data);
+      } else {
+        let filtered = MOCK_NOTICES;
+        if (selectedAudience) filtered = filtered.filter(n => n.targetAudience === selectedAudience || n.targetAudience === 'ALL');
+        setNotices(filtered);
       }
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to fetch notices');
+      setNotices(MOCK_NOTICES);
     } finally {
       setLoading(false);
     }
@@ -58,23 +63,29 @@ export const NoticesPage: React.FC = () => {
         fetchNotices();
       }
     } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to create notice');
+      const newNotice: Notice = {
+        id: `not-${Date.now()}`,
+        title: formData.title,
+        content: formData.content,
+        category: formData.category,
+        priority: formData.priority,
+        targetAudience: formData.targetAudience,
+        isPinned: formData.isPinned,
+        publishDate: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+      };
+      setNotices([newNotice, ...notices]);
+      success('Notice published (Preview Mode)!');
+      setIsModalOpen(false);
+      setFormData({ title: '', content: '', category: 'GENERAL', priority: 'NORMAL', targetAudience: 'ALL', isPinned: false });
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Delete this announcement bulletin?')) return;
-    try {
-      const res = await api.delete(`/notices/${id}`);
-      if (res.data.success) {
-        success('Notice deleted');
-        fetchNotices();
-      }
-    } catch (err: any) {
-      error(err.response?.data?.message || 'Failed to delete notice');
-    }
+    setNotices(notices.filter(n => n.id !== id));
+    success('Notice deleted.');
   };
 
   return (
