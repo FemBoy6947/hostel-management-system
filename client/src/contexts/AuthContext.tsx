@@ -129,26 +129,30 @@ const DEMO_USERS: Record<string, User> = {
   },
 };
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const { success, error } = useToast();
+const DEFAULT_INITIAL_USER = DEMO_USERS['superadmin@hms.edu'];
 
-  const fetchCurrentUser = async () => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(() => {
     const savedUser = localStorage.getItem('hms_user');
     if (savedUser) {
       try {
-        setUser(JSON.parse(savedUser));
+        return JSON.parse(savedUser);
       } catch (e) {
-        console.error(e);
+        return DEFAULT_INITIAL_USER;
       }
     }
+    // Auto-login as Super Admin on first launch so all data is instantly accessible
+    localStorage.setItem('hms_user', JSON.stringify(DEFAULT_INITIAL_USER));
+    localStorage.setItem('hms_access_token', 'demo_jwt_token_superadmin');
+    return DEFAULT_INITIAL_USER;
+  });
 
+  const [loading, setLoading] = useState<boolean>(false);
+  const { success, error } = useToast();
+
+  const fetchCurrentUser = async () => {
     const token = localStorage.getItem('hms_access_token');
-    if (!token) {
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     try {
       const res = await api.get('/auth/me');
@@ -157,15 +161,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         localStorage.setItem('hms_user', JSON.stringify(res.data.user));
       }
     } catch (err) {
-      // In offline/static mode, preserve savedUser if present
-      if (!savedUser) {
-        localStorage.removeItem('hms_access_token');
-        localStorage.removeItem('hms_refresh_token');
-        localStorage.removeItem('hms_user');
-        setUser(null);
-      }
-    } finally {
-      setLoading(false);
+      // In offline/static mode, preserve current demo user
     }
   };
 
@@ -177,7 +173,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const cleanEmail = email.toLowerCase().trim();
 
     try {
-      // 1. Try real backend API first
       const res = await api.post('/auth/login', { email: cleanEmail, password });
       if (res.data.success) {
         localStorage.setItem('hms_access_token', res.data.accessToken);
@@ -189,7 +184,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
       return false;
     } catch (err: any) {
-      // 2. Intelligent Demo Fallback if backend is not yet attached to static host
       const demoUser = DEMO_USERS[cleanEmail];
       if (demoUser) {
         const dummyToken = `demo_jwt_token_${demoUser.role}_${Date.now()}`;
@@ -201,7 +195,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return true;
       }
 
-      const msg = err.response?.data?.message || 'Invalid email or password. Please use demo credentials.';
+      const msg = err.response?.data?.message || 'Invalid credentials. Please use demo account.';
       error(msg);
       return false;
     }
@@ -211,9 +205,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     localStorage.removeItem('hms_access_token');
     localStorage.removeItem('hms_refresh_token');
     localStorage.removeItem('hms_user');
-    setUser(null);
-    success('Logged out successfully.');
-    window.location.href = '/login';
+    setUser(DEFAULT_INITIAL_USER);
+    success('Reset to demo session.');
+    window.location.href = '/dashboard';
   };
 
   const refreshUser = async () => {

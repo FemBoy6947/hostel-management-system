@@ -119,10 +119,10 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <Link
-              to="/login"
+              to="/dashboard"
               className="px-5 py-2.5 text-xs font-bold text-white bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 rounded-xl shadow-lg shadow-brand-600/20 transition-all flex items-center gap-2"
             >
-              Sign In to Portal
+              Open Live ERP Dashboard
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -154,7 +154,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Link
-              to="/login"
+              to="/dashboard"
               className="w-full sm:w-auto px-8 py-4 text-sm font-bold text-white bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 rounded-2xl shadow-xl shadow-brand-600/30 transition-all flex items-center justify-center gap-2 group"
             >
               <Zap className="w-4 h-4" />
@@ -237,7 +237,7 @@ export const LandingPage: React.FC = () => {
               </div>
 
               <Link
-                to="/login"
+                to="/dashboard"
                 className="px-6 py-3 bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-2 self-start md:self-auto"
               >
                 1-Click Demo Login as {currentPreview.title}
